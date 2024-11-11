@@ -1,0 +1,209 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Post Status</title>  
+    <link rel="stylesheet" href="style.css">  
+    <style>  
+        #statuses {  
+            max-height: 500px;  
+            overflow-y: auto;  
+            border: 1px solid #ddd;  
+            padding: 10px;  
+        }  
+        .status-item {  
+            border-bottom: 1px solid #eee;  
+            margin-bottom: 10px;  
+            padding-bottom: 10px;  
+        }  
+        #password-change {  
+            position: fixed;  
+            top: 10px;  
+            right: 10px;  
+            background-color: #f0f0f0;  
+            padding: 10px;  
+            border-radius: 5px;  
+        }  
+    </style>  
+</head>  
+<body>  
+    <div id="status-container">  
+        <h2>Post a Status</h2>  
+        <textarea id="status-text" placeholder="What's on your mind?"></textarea>  
+        <input type="file" id="status-image" accept="image/*">  
+        <button onclick="postStatus()">Post</button>  
+    </div>  
+
+    <div id="password-change">  
+        <input type="password" id="new-password" placeholder="New Password">  
+        <button onclick="changePassword()">Change Password</button>  
+    </div>  
+
+    <div id="statuses">  
+        <!-- Statuses will be displayed here -->  
+    </div>  
+
+    <script type="module">  
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";  
+    import {   
+        getDatabase,   
+        ref,   
+        push,   
+        set,   
+        onChildAdded,  
+        query,  
+        orderByChild,  
+        limitToLast,  
+        onValue  
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";  
+    import {   
+        getStorage,   
+        ref as storageRef,   
+        uploadBytes,   
+        getDownloadURL   
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";  
+
+    // Firebase configuration (replace with your own)  
+    const firebaseConfig = {  
+        apiKey: "AIzaSyBRSpWd5HtpTUKu_3HrOJkTVLigmvbvT30",
+        authDomain: "csrf-ce7da.firebaseapp.com",
+        databaseURL: "https://csrf-ce7da-default-rtdb.firebaseio.com",
+        projectId: "csrf-ce7da",
+        storageBucket: "csrf-ce7da.firebasestorage.app",
+        messagingSenderId: "167108417515",
+        appId: "1:167108417515:web:d03d2778d1ea3760842bae",
+        measurementId: "G-HVW2F279W1"  
+    };  
+
+    // Initialize Firebase  
+    const app = initializeApp(firebaseConfig);  
+    const db = getDatabase(app);  
+    const storage = getStorage(app);  
+
+    // Get current username from localStorage  
+    const currentUsername = localStorage.getItem('username');  
+    if (!currentUsername) {  
+        alert('Please log in first');  
+        window.location.href = '/';  
+    }  
+
+    // Load All Existing Statuses  
+    function loadExistingStatuses() {  
+        const statusesContainer = document.getElementById('statuses');  
+        const statusesRef = ref(db, 'statuses');  
+
+        // Clear existing statuses  
+        statusesContainer.innerHTML = '';
+      
+
+        // Listen for all statuses  
+        onValue(statusesRef, (snapshot) => {  
+            // Clear existing statuses before repopulating  
+            statusesContainer.innerHTML = '';  
+
+            // Check if there are any statuses
+            if (snapshot.exists()) {
+                console.log("check");
+                const statuses = [];  
+                snapshot.forEach((childSnapshot) => {  
+                    const status = childSnapshot.val();
+                    
+                    statuses.push(status);  
+                });  
+
+                // Sort statuses by timestamp in descending order  
+                statuses.sort((a, b) => b.timestamp - a.timestamp);  
+
+                // Render sorted statuses  
+                statuses.forEach(status => {  
+                    const statusElement = createStatusElement(status);  
+                    statusesContainer.appendChild(statusElement);  
+                });  
+            }  
+        });  
+    } 
+
+    // Create Status Element  
+    function createStatusElement(status) {  
+        const statusElement = document.createElement('div');  
+        statusElement.classList.add('status-item');  
+        statusElement.setAttribute('data-status-id', status.id);  
+        
+        statusElement.innerHTML = `  
+            <p>  
+                <strong>${status.username}</strong>:   
+                ${status.text || ''}  
+            </p>  
+            ${status.imageUrl ? `<img src="${status.imageUrl}" width="200">` : ''}  
+            <small>${formatTimestamp(status.timestamp)}</small>  
+        `;  
+        return statusElement;  
+    }  
+
+    // Format Timestamp  
+    function formatTimestamp(timestamp) {  
+        const date = new Date(timestamp);  
+        return date.toLocaleString(); // Converts to local date and time format  
+    }  
+
+    // Post Status Function  
+    window.postStatus = async function() {  
+        const statusText = document.getElementById('status-text').value;  
+        const imageFile = document.getElementById('status-image').files[0];  
+        
+        if (!statusText && !imageFile) {  
+            alert('Please enter a status or select an image');  
+            return;  
+        }  
+
+        let imageUrl = '';  
+        if (imageFile) {  
+            // Upload image to Firebase Storage  
+            const imageRef = storageRef(storage, `status_images/${Date.now()}_${imageFile.name}`);  
+            const snapshot = await uploadBytes(imageRef, imageFile);  
+            imageUrl = await getDownloadURL(snapshot.ref);  
+        }  
+
+        // Push status to Realtime Database  
+        // const statusRef = push(ref(db, 'statuses'));
+        const statusRef = ref(db, 'statuses/' + Date.now());
+      
+        console.log(currentUsername + " " + statusText + " " + imageUrl + " " + Date.now());
+        await set(statusRef, {  
+            username: currentUsername,  
+            text: statusText,  
+            imageUrl: imageUrl,  
+            timestamp: Date.now()  
+        });  
+
+        // Clear inputs  
+        document.getElementById('status-text').value = '';  
+        document.getElementById('status-image').value = '';  
+    }  
+
+    // Change Password Function  
+    window.changePassword = async function() {  
+        const newPassword = document.getElementById('new-password').value;  
+        
+        if (!newPassword) {  
+            alert('Please enter a new password');  
+            return;  
+        }  
+
+        try {  
+            // Update password in the database  
+            await set(ref(db, `users/${currentUsername}/password`), newPassword);  
+            alert('Password changed successfully');  
+            document.getElementById('new-password').value = '';  
+        } catch (error) {  
+            console.error('Error changing password:', error);  
+            alert('Failed to change password');  
+        }  
+    }  
+
+    // Load statuses when page loads  
+    loadExistingStatuses();  
+</script>  
+</body>  
+</html>

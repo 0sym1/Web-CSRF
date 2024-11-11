@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="auth-container">
+        <h2>Login or Register</h2>
+        <div id="login-form">
+            <input type="text" id="login-username" placeholder="Username">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+        <div id="register-form">
+            <input type="text" id="register-username" placeholder="Username">
+            <input type="password" id="register-password" placeholder="Password">
+            <button onclick="register()">Register</button>
+        </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+      // import { getFirestore, collection, query, where, getDocs, addDoc, updateDoc, orderBy, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+      // import { getDatabase, collection, query, where, getDocs, addDoc, updateDoc, orderBy, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+      import { getDatabase, ref, get, set, child, query, orderByChild, equalTo, startAt, endAt } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+      // import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBRSpWd5HtpTUKu_3HrOJkTVLigmvbvT30",
+        authDomain: "csrf-ce7da.firebaseapp.com",
+        databaseURL: "https://csrf-ce7da-default-rtdb.firebaseio.com",
+        projectId: "csrf-ce7da",
+        storageBucket: "csrf-ce7da.firebasestorage.app",
+        messagingSenderId: "167108417515",
+        appId: "1:167108417515:web:d03d2778d1ea3760842bae",
+        measurementId: "G-HVW2F279W1"
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      // const storage = getStorage(app);
+
+      // Đăng ký người dùng mới  
+        window.register = async function() {  
+            const username = document.getElementById('register-username').value;  
+            const password = document.getElementById('register-password').value;
+          
+          
+            const userRef = ref(db, 'users/' + username);  
+            const snapshot = await get(userRef);
+
+            if (snapshot.exists()) {  
+                alert("Username already exists. Please choose another one.");  
+            } else {  
+                await set(userRef, {  
+                    username: username,  
+                    password: password  
+                });  
+                alert("Registration successful. You can now log in.");  
+                window.location.href = '/';  
+            }  
+
+//             const usersRef = ref(db, 'users');  
+//             const userQuery = query(usersRef, orderByChild('username'), equalTo(username));  
+//             const snapshot = await get(userQuery);
+          
+//             console.log(snapshot.val());
+
+//             if (snapshot.exists()) {  
+//                 alert("Username already exists. Please choose another one.");  
+//             } else {  
+//                 const newUserRef = ref(db, 'users/' + username);  
+//                 await set(newUserRef, {  
+//                     username: username,  
+//                     password: password  
+//                 });  
+//                 alert("Registration successful. You can now log in.");  
+//                 window.location.href = '/';  
+//             }  
+        }  
+
+
+      // Đăng nhập người dùng  
+        window.login = async function() {  
+            const username = document.getElementById('login-username').value;  
+            const password = document.getElementById('login-password').value;  
+
+            const userRef = ref(db, 'users/' + username);  
+            const snapshot = await get(userRef);  
+          
+            console.log(username + " " + password);
+
+            if (snapshot.exists()) {  
+                const userData = snapshot.val();  
+                console.log(userData.username + " " + userData.password);
+                if (userData.password === password) {  
+                    alert("Login successful!");  
+                    //store username
+                    localStorage.setItem('username', username);
+                    window.location.href = '/status.html';  
+                } else {  
+                    alert("Invalid username or password.");  
+                }  
+            } else {  
+                alert("Invalid username or password.....");  
+            }  
+        }
+
+      // Đăng status
+//       window.postStatus = async function() {
+//           const statusText = document.getElementById('status-text').value;
+//           const statusImage = document.getElementById('status-image').files[0];
+//           const username = document.getElementById('login-username').value;
+
+//           if (statusImage) {
+//               const imageRef = ref(storage, `images/${statusImage.name}`);
+//               await uploadBytes(imageRef, statusImage);
+//               const imageUrl = await getDownloadURL(imageRef);
+//               await saveStatusToDB(username, statusText, imageUrl);
+//           } else {
+//               await saveStatusToDB(username, statusText, null);
+//           }
+//       }
+
+//       async function saveStatusToDB(username, text, imageUrl) {
+//           const statusesRef = collection(db, "statuses");
+//           await addDoc(statusesRef, {
+//               username: username,
+//               text: text,
+//               imageUrl: imageUrl,
+//               timestamp: new Date()
+//           });
+//           document.getElementById('status-text').value = "";
+//           document.getElementById('status-image').value = "";
+//       }
+
+//       // Đổi mật khẩu
+//       window.changePassword = async function() {
+//           const username = document.getElementById('login-username').value;
+//           const newPassword = document.getElementById('new-password').value;
+
+//           const usersRef = collection(db, "users");
+//           const q = query(usersRef, where("username", "==", username));
+//           const snapshot = await getDocs(q);
+
+//           if (!snapshot.empty) {
+//               const userDoc = snapshot.docs[0];
+//               const userRef = doc(db, "users", userDoc.id);
+//               await updateDoc(userRef, { password: newPassword });
+//               alert("Password changed successfully");
+//           } else {
+//               alert("User not found.");
+//           }
+//       }
+
+//       // Hiển thị status
+//       window.loadStatuses = function() {
+//           const statusesRef = collection(db, "statuses");
+//           const q = query(statusesRef, orderBy("timestamp", "desc"));
+//           onSnapshot(q, (snapshot) => {
+//               const statusesContainer = document.getElementById('statuses');
+//               statusesContainer.innerHTML = '';
+//               snapshot.forEach((doc) => {
+//                   const status = doc.data();
+//                   const statusElement = document.createElement('div');
+//                   statusElement.innerHTML = `
+//                       <p><strong>${status.username}</strong>: ${status.text}</p>
+//                       ${status.imageUrl ? `<img src="${status.imageUrl}" width="100">` : ''}
+//                   `;
+//                   statusesContainer.appendChild(statusElement);
+//               });
+//           });
+//       }
+
+      if (document.getElementById('statuses')) loadStatuses();
+    </script>
+</body>
+</html>

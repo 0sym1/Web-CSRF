@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Social Network</title>
+    <!-- Thêm liên kết đến tệp CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Mini Social Network</h1>
+
+    <form id="statusForm">
+        <label for="username">Name:</label><br>
+        <input type="text" id="username" name="username" placeholder="Enter your name" required><br><br>
+
+        <label for="status">Status:</label><br>
+        <textarea id="status" name="status" placeholder="What's on your mind?" required></textarea><br><br>
+
+        <button type="submit">Post</button>
+    </form>
+
+    <div class="status-container" id="statusContainer">
+        <!-- Status updates will be displayed here -->
+    </div>
+
+    <!-- Thêm liên kết đến tệp JavaScript -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+
+</body>
+</html>

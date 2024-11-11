@@ -1,0 +1,20 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+#auth-container, #status-container {
+    width: 300px;
+    margin: auto;
+    text-align: center;
+}
+
+textarea, input {
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+}
+
+#statuses {
+    max-height: 400px;
+    overflow-y: scroll;
+}
